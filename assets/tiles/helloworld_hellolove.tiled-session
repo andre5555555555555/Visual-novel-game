@@ -1,0 +1,71 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "homeScreen.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "": {
+            "scaleInDock": 1
+        },
+        "1.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "exitButton.tsx": {
+            "dynamicWrapping": true
+        },
+        "homeScreen.tmx": {
+            "expandedObjectLayers": [
+                12
+            ],
+            "scale": 0.33,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 1206.060606060606,
+                "y": 1181.8181818181818
+            }
+        },
+        "img.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "newGameButton.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 0.5,
+            "scaleInEditor": 0.5
+        }
+    },
+    "last.imagePath": "C:/flutter/helloworld_hellolove/assets/images/HUD",
+    "last.objectTemplatePath": "C:/flutter/helloworld_hellolove/assets/tiles",
+    "map.fixedSize": true,
+    "map.height": 1080,
+    "map.lastUsedFormat": "tmx",
+    "map.tileHeight": 1,
+    "map.tileWidth": 1,
+    "map.width": 1920,
+    "openFiles": [
+        "homeScreen.tmx",
+        "newGameButton.tsx"
+    ],
+    "project": "helloworld_hellolove.tiled-project",
+    "recentFiles": [
+        "homeScreen.tmx",
+        "newGameButton.tsx",
+        "img.tsx",
+        "1.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 500,
+        "width": 500
+    },
+    "tileset.type": 1,
+    "tileset.useTransparentColor": true
+}
