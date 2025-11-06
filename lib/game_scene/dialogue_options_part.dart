@@ -1,0 +1,104 @@
+part of 'scene.dart';
+
+extension DialogueOptionsPart on Scene {
+  void _handleDecision(String sceneName) {
+    _isWaitingForDecision = false;
+
+    for (final button in _decisionButtons) {
+      remove(button);
+    }
+    _decisionButtons.clear();
+
+    if (_scenePointLineIndex.isNotEmpty &&
+        _scenePointLineIndex[sceneName] != null) {
+      _currentLineIndex = _scenePointLineIndex[sceneName]!;
+    }
+
+    if (kDebugMode) {
+      print("Decision made: Go to scene '$sceneName'");
+    }
+
+    _advanceScript();
+  }
+
+  Future<void> _showDecisions(List<String> options, List<String> scenes) async {
+    _isWaitingForDecision = true;
+
+    if (sceneElements == null) return;
+
+    final TiledObject container = sceneElements!.objects.firstWhere(
+      (object) => object.name == 'decisionContainer',
+    );
+
+    const double boxHeight = 70;
+    const double bottomMargin = 10;
+    final double overallHeight = (boxHeight + bottomMargin) * options.length;
+
+    for (int i = 0; i < options.length; i++) {
+      final double offsetY = i * (boxHeight + bottomMargin);
+
+      final decisionButton = await _createDecisionButton(
+        container,
+        boxHeight,
+        offsetY,
+        overallHeight,
+        options[i],
+        scenes[i],
+        () => _handleDecision(scenes[i]),
+      );
+
+      await add(decisionButton);
+      _decisionButtons.add(decisionButton);
+    }
+  }
+
+  Future<ButtonComponent> _createDecisionButton(
+    TiledObject obj,
+    double boxHeight,
+    double offsetY,
+    double overallHeight,
+    String option,
+    String scene,
+    VoidCallback onPressed,
+  ) async {
+    final boxSize = Vector2(obj.width, boxHeight);
+
+    // Semi-transparent black rectangle background
+    final boxPaint = Paint()..color = const Color(0xAA000000);
+    final buttonShape = RectangleComponent(size: boxSize, paint: boxPaint);
+
+    // Create the actual button
+    final decisionButton = ButtonComponent(
+      size: boxSize,
+      position: Vector2(obj.x, ((obj.height - overallHeight) / 2) + offsetY),
+      anchor: Anchor.topLeft,
+      priority: 10,
+      button: buttonShape,
+      buttonDown: RectangleComponent(
+        size: boxSize,
+        paint: Paint()..color = const Color(0xAA333333),
+      ),
+      onPressed: onPressed,
+    );
+
+    // Text style for button labels
+    final textStyle = TextPaint(
+      style: const TextStyle(fontSize: 24.0, color: Color(0xFFFFFFFF)),
+    );
+
+    const padding = 10.0;
+
+    final textBox = TextBoxComponent(
+      text: option,
+      textRenderer: textStyle,
+      size: Vector2(boxSize.x - (padding * 2), boxSize.y - (padding * 2)),
+      position: Vector2(padding, padding),
+      anchor: Anchor.topLeft,
+      priority: 1,
+      align: Anchor.center,
+    );
+
+    await decisionButton.add(textBox);
+    return decisionButton;
+  }
+}

@@ -3,15 +3,19 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flame/camera.dart';
+import 'package:flutter/services.dart';
 
 import 'package:helloworld_hellolove/screens/home_screen.dart';
+<<<<<<< HEAD
 import 'package:helloworld_hellolove/sets/characters.dart';
 import 'package:helloworld_hellolove/scenes/scene.dart';
+=======
+import 'package:helloworld_hellolove/game_scene/scene.dart';
+>>>>>>> 0772f4f916dfda3fe3189b7682daca36d4f15852
 import 'package:flutter/painting.dart';
-import 'package:helloworld_hellolove/sets/scene_set.dart';
+import 'package:helloworld_hellolove/game_assets/scene_set.dart';
 
-class HelloworldHellolove extends FlameGame
-    with HasKeyboardHandlerComponents, TapCallbacks {
+class HelloworldHellolove extends FlameGame with HasKeyboardHandlerComponents {
   static final virtualResolution = Vector2(1920, 1080);
 
   // --- NEW: Class-level variables ---
@@ -29,8 +33,9 @@ class HelloworldHellolove extends FlameGame
 
   @override
   FutureOr<void> onLoad() async {
+    // String fullText = await rootBundle.loadString('assets/');
+    // print(fullText);
     await images.loadAllImages();
-    await setCharacters();
 
     homeScreen = HomeScreen(); // Assign to class variable
 
@@ -63,10 +68,12 @@ class HelloworldHellolove extends FlameGame
     remove(chapterScene);
     if (chapter.scenes.isNotEmpty) {
       chapterScene = chapter.scenes.removeAt(0);
-      chapterScene.inDialogue = true;
     } else if (chapters.isNotEmpty) {
       chapter = chapters.removeAt(0);
       if (chapter.scenes.isNotEmpty) chapterScene = chapter.scenes.removeAt(0);
+    } else {
+      goToHomeScreen();
+      return;
     }
 
     add(chapterScene);
