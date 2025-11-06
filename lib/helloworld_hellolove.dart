@@ -6,7 +6,7 @@ import 'package:flame/camera.dart';
 
 import 'package:helloworld_hellolove/screens/home_screen.dart';
 import 'package:helloworld_hellolove/sets/characters.dart';
-import 'package:helloworld_hellolove/models/scene.dart';
+import 'package:helloworld_hellolove/scenes/scene.dart';
 import 'package:flutter/painting.dart';
 import 'package:helloworld_hellolove/sets/scene_set.dart';
 

@@ -19,7 +19,7 @@ CharacterSprites akagiKohaku = CharacterSprites(
     'smug',
   ],
   character: 'Akagi Kohaku',
-  size: Vector2.all(1000),
+  size: Vector2.all(950),
 );
 
 CharacterSprites habaneAkari = CharacterSprites(
@@ -38,7 +38,7 @@ CharacterSprites habaneAkari = CharacterSprites(
     'tsundere',
   ],
   character: 'Habane Akari',
-  size: Vector2.all(900),
+  size: Vector2.all(850),
 );
 
 CharacterSprites hotaruYuna = CharacterSprites(
@@ -54,5 +54,5 @@ CharacterSprites hotaruYuna = CharacterSprites(
     'koi',
   ],
   character: 'Hotaru Yuna',
-  size: Vector2.all(875),
+  size: Vector2.all(800),
 );
