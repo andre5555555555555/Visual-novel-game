@@ -11,13 +11,6 @@ String dialoguePath = 'assets/dialogue/';
 
 List<SceneSets> getChapters() {
   return [
-    SceneSets(
-      name: 'Chapter1',
-      scenes: [
-        Scene('${dialoguePath}c1_s1.txt'),
-        Scene('${dialoguePath}c1_s1.txt'),
-        Scene('${dialoguePath}c1_s1.txt'),
-      ],
-    ),
+    SceneSets(name: 'Chapter1', scenes: [Scene('${dialoguePath}c1_s1.txt')]),
   ];
 }

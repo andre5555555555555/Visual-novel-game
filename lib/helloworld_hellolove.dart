@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:helloworld_hellolove/screens/home_screen.dart';
 import 'package:helloworld_hellolove/game_scene/scene.dart';
 import 'package:flutter/painting.dart';
-import 'package:helloworld_hellolove/sets/scene_set.dart';
+import 'package:helloworld_hellolove/game_assets/scene_set.dart';
 
 class HelloworldHellolove extends FlameGame with HasKeyboardHandlerComponents {
   static final virtualResolution = Vector2(1920, 1080);

@@ -4,7 +4,7 @@ import 'package:flame/input.dart';
 import 'package:flame_tiled/flame_tiled.dart';
 import 'package:flutter/foundation.dart';
 import 'package:helloworld_hellolove/helloworld_hellolove.dart';
-import 'package:helloworld_hellolove/sets/characters.dart';
+import 'package:helloworld_hellolove/game_assets/characters.dart';
 
 class HomeScreen extends World with HasGameReference<HelloworldHellolove> {
   @override

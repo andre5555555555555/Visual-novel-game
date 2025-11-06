@@ -2,81 +2,105 @@ import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/input.dart';
+import 'package:flame_tiled/flame_tiled.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:helloworld_hellolove/game_scene/dialogue_box.dart';
-import 'package:helloworld_hellolove/game_scene/ui_helper.dart';
 import 'package:helloworld_hellolove/helloworld_hellolove.dart';
-import 'package:helloworld_hellolove/sets/characters.dart';
+import 'package:helloworld_hellolove/game_assets/characters.dart';
+import 'package:flame/text.dart';
+import 'package:flutter/painting.dart';
+
+part 'skip_or_advance_part.dart';
+part 'set_scene_part.dart';
+part 'dialogue_options_part.dart';
+part 'ui_builder_part.dart';
+part 'dialogue_box_part.dart';
 
 class Scene extends World
-    with
-        HasGameReference<HelloworldHellolove>,
-        TapCallbacks,
-        KeyboardHandler,
-        UiHelpers {
+    with HasGameReference<HelloworldHellolove>, TapCallbacks, KeyboardHandler {
   final String dialoguePath;
   final Map<String, CharacterData> _characterSprites = {};
   SpriteComponent? _backgroundComponent;
 
-  late List<ButtonComponent> _decisionButtons;
+  late final ObjectGroup? sceneElements;
+  final List<ButtonComponent> _decisionButtons = [];
   late final RectangleComponent _dialogueBox;
   late final TextBoxComponent _textBox;
+
+  static const double _textSpeed = 0.03;
   // --- Scripting Properties ---
-  late List<String> _scriptLines;
+  late final List<String> _scriptLines = [];
+  final Map<String, int> _scenePointLineIndex = {};
   int _currentLineIndex = 0;
   bool _isTyping = false;
   bool _isWaitingForDecision = false;
   String _fullText = '';
   double _timer = 0.0;
   int _charIndex = 0;
-  static const double _textSpeed = 0.03;
   String? _currentSpeaker;
 
   Scene(this.dialoguePath);
 
   @override
   FutureOr<void> onLoad() async {
-    // debugMode = true;
-    // Loads the script
     final fullScriptText = await rootBundle.loadString(dialoguePath);
 
-    _scriptLines = [];
+    final tiledMap = await TiledComponent.load('sceneUI.tmx', Vector2.all(1.0));
+    tiledMap.priority = 11;
+    await add(tiledMap);
+
+    sceneElements = tiledMap.tileMap.getLayer<ObjectGroup>('sceneElements');
+
     final rawLines = fullScriptText.split('\n');
     String multiLineBuffer = '';
+    final RegExp scenePointRegex = RegExp(r'^SCENE{POINT:\s*([^\s,]+)\s*,');
+    final RegExp pointRemover = RegExp(r'POINT:\s*[^\s,]+\s*,\s*');
+    int currentScriptIndex = 0;
 
     for (final line in rawLines) {
-      final trimmedLine = line.trim();
+      String trimmedLine = line.trim();
 
       if (multiLineBuffer.isNotEmpty) {
         multiLineBuffer += ' $trimmedLine';
         if (trimmedLine.endsWith('"')) {
+          currentScriptIndex++;
           _scriptLines.add(multiLineBuffer);
           multiLineBuffer = '';
         }
       } else if (trimmedLine.startsWith('{') && trimmedLine.contains(':"')) {
         if (trimmedLine.endsWith('"')) {
+          currentScriptIndex++;
           _scriptLines.add(trimmedLine);
         } else {
           multiLineBuffer = trimmedLine;
         }
       } else if (trimmedLine.startsWith('SCENE{')) {
+        final sceneMatch = scenePointRegex.firstMatch(trimmedLine);
+        if (sceneMatch != null) {
+          final scenePoint = sceneMatch.group(1)!;
+          _scenePointLineIndex[scenePoint] = currentScriptIndex;
+          trimmedLine = line.replaceFirst(pointRemover, '');
+          print(trimmedLine);
+          print(_scenePointLineIndex);
+        }
+        currentScriptIndex++;
         _scriptLines.add(trimmedLine);
       } else if (trimmedLine.startsWith('DECISION{')) {
+        currentScriptIndex++;
+        _scriptLines.add(trimmedLine);
+      } else if (trimmedLine.startsWith('JUMP{')) {
+        currentScriptIndex++;
         _scriptLines.add(trimmedLine);
       }
     }
-    // print('script lines' + _scriptLines.length.toString());
-    // for (var line in _scriptLines) {
-    //   print(line);
-    // }
+    print(_scenePointLineIndex);
+    print('script lines' + _scriptLines.length.toString());
+    for (var line in _scriptLines) {
+      print(line);
+    }
 
-    // Add permanent UI elements
-    await addUIElements('sceneUI', 'sceneElements', decisionAmount: 4);
-    final (dialogueBox, textBox) = await addDialogueBox();
-    _dialogueBox = dialogueBox;
-    _textBox = textBox;
-    _dialogueBox.add(textBox);
+    await addUiElements();
+    await addDialogueBox();
 
     // Start the script. The script will load the first background/characters
     await _advanceScript();
@@ -102,53 +126,28 @@ class Scene extends World
     }
   }
 
-  Future<void> _skipOrAdvance() async {
-    if (_isWaitingForDecision) return;
-
-    if (_isTyping) {
-      _skipTyping();
-    } else {
-      await _advanceScript();
-    }
-  }
-
-  void _skipTyping() {
-    _charIndex = _fullText.length;
-    _textBox.text = _fullText;
-    _isTyping = false;
-  }
-
-  void _startTyping(String speaker, String text) {
-    _currentSpeaker = speaker;
-    _characterSprites[_currentSpeaker]!.greydOut(false);
-
-    _fullText = '$speaker: $text';
-    _charIndex = 0;
-    _timer = 0.0;
-    _textBox.text = '';
-    _isTyping = true;
-    if (!_dialogueBox.isMounted) add(_dialogueBox);
-  }
-
-  Future<void> _advanceScript() async {
-    if (_currentLineIndex >= _scriptLines.length) {
-      game.goToNextScene();
-      return;
-    }
-
-    final line = _scriptLines[_currentLineIndex].trim();
-    _currentLineIndex++;
-
-    await _parseLine(line);
-  }
-
   Future<void> _parseLine(String line) async {
-    if (line.isEmpty || line.startsWith('//')) {
-      await _advanceScript();
-      return;
+    // --- Check for SCENE command ---
+    if (await scene(line)) return;
+
+    // --- Check for DECISION command ---
+    if (await decision(line)) return;
+
+    // --- Check for DIALOGUE command ---
+    if (await dialogue(line)) return;
+
+    // --- CHECK for JUMP COMMAND ---
+    if (await jump(line)) return;
+
+    // --- Handle other commands or errors ---
+    if (kDebugMode) {
+      print('WARNING: Unknown script line: $line');
     }
 
-    // --- Check for SCENE command ---
+    await _advanceScript();
+  }
+
+  Future<bool> scene(String line) async {
     final RegExp sceneRegex = RegExp(
       r'^SCENE{LOCATION:\s*([^,]+),\s*CHARACTERS:\s*\[(.*)\]}$',
     );
@@ -160,15 +159,17 @@ class Scene extends World
       final String charactersString = sceneMatch.group(2)!.trim();
       // print(locationName + ' -- ' + charactersString);
 
-      final List<CharacterData> characters = _parseCharacters(charactersString);
+      final List<CharacterData> characters = parseCharacters(charactersString);
 
       await _setScene(locationName, characters);
 
       await _advanceScript();
-      return;
+      return true;
     }
+    return false;
+  }
 
-    // --- Check for DECISION command ---
+  Future<bool> decision(String line) async {
     final RegExp decisionRegex = RegExp(r'^DECISION\{(.*)\}$');
     final decisionMatch = decisionRegex.firstMatch(line.trim());
 
@@ -187,11 +188,13 @@ class Scene extends World
         }
       }
 
-      _showDecision(options, scenes);
-      return;
+      _showDecisions(options, scenes);
+      return true;
     }
+    return false;
+  }
 
-    // --- Check for DIALOGUE command ---
+  Future<bool> dialogue(String line) async {
     final RegExp dialogueRegex = RegExp(r'^\{(.*)\}:\"([\s\S]*)\"$');
     final dialogueMatch = dialogueRegex.firstMatch(line.trim());
 
@@ -220,7 +223,7 @@ class Scene extends World
 
       if (speaker.isNotEmpty) {
         if (state.isNotEmpty) {
-          _handleEmote(speaker, state);
+          _handleState(speaker, state);
         }
         if (_characterSprites.containsKey(_currentSpeaker)) {
           _characterSprites[_currentSpeaker]!.greydOut(true);
@@ -232,110 +235,23 @@ class Scene extends World
         }
         await _advanceScript();
       }
-      return;
+      return true;
     }
-
-    // --- Handle other commands or errors ---
-    if (kDebugMode) {
-      print('WARNING: Unknown script line: $line');
-    }
-    await _advanceScript();
+    return false;
   }
 
-  void _showDecision(List<String> options, List<String> scenes) async {
-    _isWaitingForDecision = true;
-    _decisionButtons = await addDecisionElement(
-      options,
-      scenes,
-      _handleDecision,
-    );
+  Future<bool> jump(String line) async {
+    final RegExp jumpRegex = RegExp(r'JUMP\{\s*([^\s\}]+)\s*\}');
+    final jumpMatch = jumpRegex.firstMatch(line.trim());
+    if (jumpMatch != null) {
+      final String scene = jumpMatch.group(1)!.trim();
+      _currentLineIndex = _scenePointLineIndex[scene]!;
+      return true;
+    }
+    return false;
   }
 
-  void _handleDecision(String sceneName) {
-    _isWaitingForDecision = false;
-
-    for (final button in _decisionButtons) {
-      remove(button);
-    }
-    _decisionButtons.clear();
-
-    if (kDebugMode) {
-      print("Decision made: Go to scene '$sceneName'");
-    }
-
-    _advanceScript();
-  }
-
-  /// --- Parses the character definition string ---
-  List<CharacterData> _parseCharacters(String charStr) {
-    final List<CharacterData> characters = [];
-    // This RegExp finds "left(...)", "right(...)", or "center(...)"
-    final RegExp positionRegex = RegExp(r'(left|right|center)\(([^)]+)\)');
-
-    for (final match in positionRegex.allMatches(charStr)) {
-      final String positionStr = match.group(
-        1,
-      )!; // "left", "right", or "center"
-      final String namesStr = match.group(2)!; // "Habane, Akagi"
-      // print(positionStr + ' -- ' + namesStr);
-
-      final names = namesStr.split(',').map((e) => e.trim()).toList();
-      // print(names);
-
-      PositionAt pos;
-      FacingAt face;
-
-      // Set position and facing direction based on the command
-      switch (positionStr) {
-        case 'left':
-          pos = PositionAt.left;
-          face = FacingAt.right; // Characters on the left face right
-          break;
-        case 'right':
-          pos = PositionAt.right;
-          face = FacingAt.left; // Characters on the right face left
-          break;
-        case 'center':
-        default:
-          pos = PositionAt.center;
-          face = FacingAt.right; // Default center facing
-          break;
-      }
-
-      for (final name in names) {
-        final String fullName = name;
-        final CharacterData char = characterFactory(fullName);
-        char.positionAt = pos;
-        char.facingAt = face;
-        char.greydOut(true);
-        characters.add(char);
-      }
-    }
-    return characters;
-  }
-
-  /// Clears old scene and loads new background and characters
-  Future<void> _setScene(
-    String locationName,
-    List<CharacterData> characters,
-  ) async {
-    if (_backgroundComponent != null) remove(_backgroundComponent!);
-    for (final charSprite in _characterSprites.values) {
-      remove(charSprite);
-    }
-    _characterSprites.clear();
-
-    final backgroundSprite = await Sprite.load('locations/$locationName.png');
-    _backgroundComponent = SpriteComponent()
-      ..sprite = backgroundSprite
-      ..size = HelloworldHellolove.virtualResolution
-      ..priority = -1;
-    await add(_backgroundComponent!);
-
-    await _addCharacters(characters);
-  }
-
-  void _handleEmote(String charName, String stateName) {
+  void _handleState(String charName, String stateName) {
     // if (kDebugMode) {
     //   print('SCRIPT: Character $charName changes to $stateName');
     // }
@@ -351,52 +267,16 @@ class Scene extends World
   }
 
   @override
-  void onTapDown(TapDownEvent event) {
-    _skipOrAdvance(); // Calls async version
-    super.onTapDown(event);
-  }
-
-  Future<void> _addCharacters(List<CharacterData>? characters) async {
-    if (characters != null) {
-      double rightOffset = 0.0;
-      double leftOffset = 0.0;
-
-      for (final character in characters) {
-        double xPosition = 0.0;
-        double yPosition =
-            HelloworldHellolove.virtualResolution.y - character.size.y;
-
-        if (character.positionAt == PositionAt.center) {
-          character.position = Vector2(
-            HelloworldHellolove.virtualResolution.x / 2 +
-                (character.facingAt == FacingAt.right
-                    ? (character.size.x / 2)
-                    : -(character.size.x / 2)),
-            yPosition,
-          );
-        } else {
-          if (character.facingAt == FacingAt.right) {
-            xPosition = 800 + leftOffset;
-            leftOffset += 400;
-          } else {
-            xPosition = 1120 - rightOffset;
-            rightOffset += 400;
-          }
-          character.position = Vector2(xPosition, yPosition);
-        }
-        character.priority = 1;
-
-        await add(character);
-        _characterSprites[character.name] = character;
-      }
+  bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.space) {
+      _skipOrAdvance();
     }
+    return super.onKeyEvent(event, keysPressed);
   }
 
   @override
-  bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.space) {
-      _skipOrAdvance(); // Calls async version
-    }
-    return super.onKeyEvent(event, keysPressed);
+  void onTapDown(TapDownEvent event) {
+    _skipOrAdvance();
+    super.onTapDown(event);
   }
 }
