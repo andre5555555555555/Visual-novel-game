@@ -5,7 +5,7 @@ import 'package:flame/input.dart';
 import 'package:flame_tiled/flame_tiled.dart';
 import 'package:flutter/foundation.dart';
 import 'package:helloworld_hellolove/helloworld_hellolove.dart';
-import 'package:helloworld_hellolove/sets/characters.dart';
+import 'package:helloworld_hellolove/game_assets/characters.dart';
 
 class HomeScreen extends World with HasGameReference<HelloworldHellolove> {
   @override
@@ -13,10 +13,12 @@ class HomeScreen extends World with HasGameReference<HelloworldHellolove> {
     // --- Background ---
     final backgroundSprite = await Sprite.load('HUD/bg.png');
     final backgroundComponent = SpriteComponent()
+      ..priority = -1
       ..sprite = backgroundSprite
       ..size = HelloworldHellolove.virtualResolution;
     await add(backgroundComponent);
 
+<<<<<<< HEAD
     // --- Optional: load tiled map (not required for menu layout) ---
     try {
       final tiledMap = await TiledComponent.load(
@@ -25,11 +27,44 @@ class HomeScreen extends World with HasGameReference<HelloworldHellolove> {
       );
       add(tiledMap);
     } catch (e) {
+=======
+    final tiledMap = await TiledComponent.load(
+      'homeScreen.tmx',
+      Vector2.all(1.0),
+    );
+    add(tiledMap);
+
+    final objectLayer = tiledMap.tileMap.getLayer<ObjectGroup>(
+      'HomeScreenButtons',
+    );
+
+    if (objectLayer != null) {
+      for (final TiledObject obj in objectLayer.objects) {
+        final buttonSprite = await Sprite.load('HUD/newGameButton.png');
+
+        final button = ButtonComponent(
+          button: SpriteComponent(
+            sprite: buttonSprite,
+            size: Vector2(obj.width, obj.height),
+          ),
+          position: Vector2(obj.x, obj.y),
+          size: Vector2(obj.width, obj.height),
+          anchor: Anchor.bottomLeft,
+          onPressed: () {
+            _handleButtonPress(obj.name);
+          },
+        );
+
+        await add(button);
+      }
+    } else {
+>>>>>>> 0772f4f916dfda3fe3189b7682daca36d4f15852
       if (kDebugMode) {
         print('Tiled map not found or not used: $e');
       }
     }
 
+<<<<<<< HEAD
     // --- Logo and Button Layout ---
     final logoSprite = await Sprite.load('HUD/logo.png');
     final logoSize = Vector2(500, 500);
@@ -116,9 +151,24 @@ class HomeScreen extends World with HasGameReference<HelloworldHellolove> {
       ),
       priority: 2,
       scale: Vector2(-1, 1),
+=======
+    // --- Characters in homescreen---
+    final akagi = characterFactory('Akagi');
+    akagi.setPosition(
+      Vector2(1400, HelloworldHellolove.virtualResolution.y - akagi.size.y),
     );
+    await add(akagi);
+
+    final habane = characterFactory('Habane');
+    habane.setPosition(
+      Vector2(1100, HelloworldHellolove.virtualResolution.y - habane.size.y),
+>>>>>>> 0772f4f916dfda3fe3189b7682daca36d4f15852
+    );
+    habane.priority = 1;
+
     await add(habane);
 
+<<<<<<< HEAD
     final hotaru = SpriteComponent(
       sprite: hotaruYuna.stateImages['koi'],
       size: hotaruYuna.size,
@@ -128,6 +178,12 @@ class HomeScreen extends World with HasGameReference<HelloworldHellolove> {
       ),
       priority: 1,
       scale: Vector2(1, 1),
+=======
+    final hotaru = characterFactory('Hotaru');
+    hotaru.setFacingDirection(FacingAt.left);
+    hotaru.setPosition(
+      Vector2(-30, HelloworldHellolove.virtualResolution.y - hotaru.size.y),
+>>>>>>> 0772f4f916dfda3fe3189b7682daca36d4f15852
     );
     await add(hotaru);
   }

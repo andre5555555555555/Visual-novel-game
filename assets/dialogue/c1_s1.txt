@@ -1,0 +1,52 @@
+// Point 1: The First Meeting
+// 'POINT' is a label we can jump to.
+SCENE{POINT:1, LOCATION: Courtyard (Sunset), CHARACTERS: [left(Habane, Akagi), right(Hotaru)]}
+
+{SAY:Akagi Kohaku, STATE:blushing}:"Oh... hello. I'm Akagi Kohaku. It's nice to meet you."
+{SAY:Hotaru Yuna, STATE:default}:"Hi there! I'm Hotaru Yuna! Are you new here?"
+{SAY:Habane Akari, STATE:disappointed}:"What are you looking at? Stop staring, it's weird."
+{SAY:Hotaru Yuna, STATE:koi}:"You're both so cute! I could just watch you all day."
+
+// A decision block. The key is the text, the value is the POINT to jump to.
+DECISION{1_A:Introduce myself, 1_B:Stay quiet:, 1_C:Ask Habane a question}
+
+// Branch A
+SCENE{POINT:1_A, LOCATION: Courtyard (Sunset), CHARACTERS: [left(Habane, Akagi), right(Hotaru)]}
+{SAY:Akagi Kohaku, STATE:smile}:"It's nice to meet you too! I hope we can be friends."
+{SAY:Hotaru Yuna, STATE:blushing}:"Of course! We'd love that!"
+JUMP{2} // Jump to the next major point
+
+// Branch B
+SCENE{POINT:1_B, LOCATION: Courtyard (Sunset), CHARACTERS: [left(Habane, Akagi), right(Hotaru)]}
+{SAY:Habane Akari, STATE:smug}:"Hmph. Not much of a talker, are you?"
+{SAY:Hotaru Yuna, STATE:concerned}:"Habane-chan, be nice! Maybe they're just shy."
+JUMP{2} // Jump to the next major point
+
+// Branch C
+SCENE{POINT:1_C, LOCATION: Courtyard (Sunset), CHARACTERS: [left(Habane, Akagi), right(Hotaru)]}
+{SAY:Habane Akari, STATE:shocked}:"W-what? Why are you asking me?"
+{SAY:Habane Akari, STATE:tsundere}:"It's not like I care what you think! ...But I guess you can ask."
+JUMP{2} // Jump to the next major point
+
+// Point 2: Hallway
+SCENE{POINT:2, LOCATION: Corridor2 (Night), CHARACTERS: [center(Habane)]}
+{SAY:Habane Akari, STATE:concerned}:"What a long day... I'm glad it's over."
+{SAY:Habane Akari, STATE:default}:"You're still here? What do you want?"
+
+// Your requested format: {1:Yes, 2:No, ...}
+// I've mapped them to jump points.
+DECISION{2_A:Agree with her, 2_B:Disagree with her}
+
+// Branch 2A
+SCENE{POINT:2_A, LOCATION: Corridor2 (Night), CHARACTERS: [center(Habane)]}
+{SAY:Habane Akari, STATE:default}:"Yeah, it was exhausting. Well, whatever. I'm going home."
+JUMP{END} // Jump to the end of the script
+
+// Branch 2B
+SCENE{POINT:2_B, LOCATION: Corridor2 (Night), CHARACTERS: [center(Habane)]}
+{SAY:Habane Akari, STATE:mad1}:"What? You liked today? You're weird."
+{SAY:Habane Akari, STATE:smug}:"Hmph. See you tomorrow... I guess."
+JUMP{END} // Jump to the end of the script
+
+// The end of the script
+SCENE{POINT:END, LOCATION: Corridor2 (Night), CHARACTERS: []}
